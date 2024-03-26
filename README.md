@@ -27,9 +27,9 @@ no new deployment is available. Defaults to `false`.
 
 Optional - How often (in seconds) should we make the HTTP request checking to see if the deployment is available? Defaults to `2` seconds.
 
-### `vercel_password`
+### `vercel_bypass_token`
 
-Optional - The [password](https://vercel.com/docs/concepts/projects/overview#password-protection) for the deployment
+Optional - The [bypass token](https://vercel.com/docs/security/deployment-protection/methods-to-bypass-deployment-protection/protection-bypass-automation) to allow bypassing the deployment protection.
 
 ### `path`
 
@@ -41,10 +41,6 @@ Optional - The URL that tests should run against (eg. `path: "https://vercel.com
 
 The vercel deploy preview url that was deployed.
 
-### `vercel_jwt`
-
-If accessing a password protected site, the JWT from the login event. This can be passed on to e2e tests, for instance.
-
 ## Example usage
 
 Basic Usage
@@ -52,7 +48,7 @@ Basic Usage
 ```yaml
 steps:
   - name: Waiting for 200 from the Vercel Preview
-    uses: patrickedqvist/wait-for-vercel-preview@v1.3.1
+    uses: amerfarooq/wait-for-vercel-preview@v1.0.0
     id: waitFor200
     with:
       token: ${{ secrets.GITHUB_TOKEN }}
