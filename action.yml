@@ -20,8 +20,8 @@ inputs:
     description: 'How often (in seconds) should we make the HTTP request checking to see if the deployment is available?'
     default: '2'
     required: false
-  vercel_password:
-    description: 'Vercel password protection secret'
+  vercel_bypass_token:
+    description: 'Vercel bypass token'
     required: false
   path:
     description: 'The path to check. Defaults to the index of the domain'
@@ -31,8 +31,6 @@ inputs:
 outputs:
   url:
     description: 'The fully qualified deploy preview URL'
-  vercel_jwt:
-    description: 'If the deployment is using password protection, this will be a JWT. Otherwise, outputs an empty string'
 runs:
   using: 'node16'
   main: 'dist/index.js'

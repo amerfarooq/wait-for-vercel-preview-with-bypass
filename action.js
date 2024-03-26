@@ -14,7 +14,7 @@ const waitForUrl = async ({
   url,
   maxTimeout,
   checkIntervalInMilliseconds,
-  vercelPassword,
+  vercelBypassToken,
   path,
 }) => {
   const iterations = calculateIterations(
@@ -25,18 +25,12 @@ const waitForUrl = async ({
   for (let i = 0; i < iterations; i++) {
     try {
       let headers = {};
-
-      if (vercelPassword) {
-        const jwt = await getPassword({
-          url,
-          vercelPassword,
-        });
-
+      if (vercelBypassToken) {
+        // https://vercel.com/docs/security/deployment-protection/methods-to-bypass-deployment-protection/protection-bypass-automation
         headers = {
-          Cookie: `_vercel_jwt=${jwt}`,
+          "x-vercel-protection-bypass": vercelBypassToken,
+          "x-vercel-set-bypass-cookie": true
         };
-
-        core.setOutput('vercel_jwt', jwt);
       }
 
       let checkUri = new URL(path, url);
@@ -66,52 +60,6 @@ const waitForUrl = async ({
   }
 
   core.setFailed(`Timeout reached: Unable to connect to ${url}`);
-};
-
-/**
- * See https://vercel.com/docs/errors#errors/bypassing-password-protection-programmatically
- * @param {{url: string; vercelPassword: string }} options vercel password options
- * @returns {Promise<string>}
- */
-const getPassword = async ({ url, vercelPassword }) => {
-  console.log('requesting vercel JWT');
-
-  const data = new URLSearchParams();
-  data.append('_vercel_password', vercelPassword);
-
-  const response = await axios({
-    url,
-    method: 'post',
-    data: data.toString(),
-    headers: {
-      'content-type': 'application/x-www-form-urlencoded',
-    },
-    maxRedirects: 0,
-    validateStatus: (status) => {
-      // Vercel returns 303 with the _vercel_jwt
-      return status >= 200 && status < 307;
-    },
-  });
-
-  const setCookieHeader = response.headers['set-cookie'];
-
-  if (!setCookieHeader) {
-    throw new Error('no vercel JWT in response');
-  }
-
-  const cookies = setCookieParser(setCookieHeader);
-
-  const vercelJwtCookie = cookies.find(
-    (cookie) => cookie.name === '_vercel_jwt'
-  );
-
-  if (!vercelJwtCookie || !vercelJwtCookie.value) {
-    throw new Error('no vercel JWT in response');
-  }
-
-  console.log('received vercel JWT');
-
-  return vercelJwtCookie.value;
 };
 
 const waitForStatus = async ({
@@ -279,7 +227,7 @@ const run = async () => {
   try {
     // Inputs
     const GITHUB_TOKEN = core.getInput('token', { required: true });
-    const VERCEL_PASSWORD = core.getInput('vercel_password');
+    const VERCEL_BYPASS_TOKEN = core.getInput('vercel_bypass_token');
     const ENVIRONMENT = core.getInput('environment');
     const MAX_TIMEOUT = Number(core.getInput('max_timeout')) || 60;
     const ALLOW_INACTIVE = Boolean(core.getInput('allow_inactive')) || false;
@@ -366,7 +314,7 @@ const run = async () => {
       url: targetUrl,
       maxTimeout: MAX_TIMEOUT,
       checkIntervalInMilliseconds: CHECK_INTERVAL_IN_MS,
-      vercelPassword: VERCEL_PASSWORD,
+      vercelBypassToken: VERCEL_BYPASS_TOKEN,
       path: PATH,
     });
   } catch (error) {
